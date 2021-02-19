@@ -71,6 +71,24 @@ class Analytics extends Prototype
 				// Form send
 				if( $this->input->verify_nonce('ga_token_update') ){
 					// Update token
+					if(isset($_FILES["key_file"])) {
+						$finfo = finfo_open(FILEINFO_MIME_TYPE);
+						if ('text/plain' === finfo_file($finfo, $_FILES['key_file']['tmp_name'])) {
+							try {
+								$text = file_get_contents($_FILES['key_file']['tmp_name']);
+								$json = json_decode($text);
+								if ('service_account' == $json->type) {
+									update_option('gapiwp_service_account_key', $text);
+									if ($this->client->getAccessToken()) {
+										$this->show_message(__('トークンの取得に成功しました', 'gapiwp'));
+										return;
+									}
+								}
+							} catch (\Exception $e) {
+								$this->show_message($e->getMessage(), true);
+							}
+						}
+					}
 					$token = $this->input->post('consumer_key');
 					update_option('gapiwp_key', $token);
 					$secret = $this->input->post('consumer_secret');
@@ -222,6 +240,22 @@ class Analytics extends Prototype
 	public function __get($name){
 		switch( $name ){
 			case 'client':
+				if( is_null($this->_client) && ($this->service_account_key) ){
+					$this->_client = new \Google_Client();
+					$key = json_decode($this->service_account_key, true);
+					$credentials = new \Google_Auth_AssertionCredentials(
+						$key['client_email'],
+						array(
+							'https://www.googleapis.com/auth/analytics.readonly'
+						),
+						$key['private_key']
+					);
+					$this->_client->setAssertionCredentials($credentials);
+					if ($this->_client->isAccessTokenExpired()) {
+						$this->_client->getAuth()->refreshTokenWithAssertion($credentials);
+						update_option('gapiwp_token', $this->_client->getAccessToken());
+					}
+				}
 				if( is_null($this->_client) && ($this->consumer_key && $this->consumer_secret) ){
 					try{
 						$this->_client = new \Google_Client();
@@ -263,6 +297,9 @@ class Analytics extends Prototype
 				break;
 			case 'consumer_secret':
 				return get_option('gapiwp_secret', '');
+				break;
+			case 'service_account_key':
+				return get_option('gapiwp_service_account_key', '');
 				break;
 			case 'token':
 				return get_option('gapiwp_token', '');

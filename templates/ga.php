@@ -4,7 +4,7 @@
 		<i class="dashicons dashicons-dashboard" style="font-size: 30px; height: 30px; width: 30px;"></i> <?php _e('Google Analytics設定', 'gapiwp'); ?>
 	</h2>
 
-	<form action="<?php echo admin_url('options-general.php?page=gapiwp-analytics') ?>" method="post">
+	<form action="<?php echo admin_url('options-general.php?page=gapiwp-analytics') ?>" method="post" enctype="multipart/form-data">
 		<?php wp_nonce_field('ga_token_update') ?>
 		<table class="form-table">
 			<tr>
@@ -24,6 +24,12 @@
 				<td>
 					<input type="text" class="regular-text" readonly value="<?php echo esc_attr(admin_url('options-general.php?page=gapiwp-analytics')) ?>" />
 					<p class="description"><?php printf(__('<a href="%s">Google API Console</a>で設定しておいてください。', 'gapiwp'), 'https://console.developers.google.com/project') ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th><?php _e('サービスアカウント認証ファイル(JSON)', 'gapiwp') ?></th>
+				<td>
+					<input type="file" name="key_file" />
 				</td>
 			</tr>
 			<tr>
